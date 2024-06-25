@@ -1,0 +1,1 @@
+python homework.py > output_hw.txt
