@@ -79,53 +79,37 @@ train_time_start_on_cpu = timer()
 
 for epoch in tqdm(range(EPOCHS)):
     print(f"Epoch: {epoch}\n-------")
+
+    # ----- train ----- 
     train_loss = 0
     for batch, (X, y) in enumerate(train_dataloader):
         model.train() 
-        # 1. 前向传播
-        y_pred = model(X)
-
-        # 2. 计算损失（每个批次）
-        loss = loss_function(y_pred, y)
-        train_loss += loss # 累计每个epoch的损失
-
-        # 3. 优化器梯度清零
-        optimizer.zero_grad()
-
-        # 4. 反向传播损失
-        loss.backward()
-
-        # 5. 优化器更新参数
-        optimizer.step()
-    # 训练损失除以训练数据加载器的长度（每个批次每个epoch的平均损失）
+        y_pred = model(X) # Forward pass
+        loss = loss_function(y_pred, y) # Compute loss (per batch)
+        train_loss += loss # Accumulate loss over each epoch
+        optimizer.zero_grad() # Zero the gradients of the optimizer
+        loss.backward() # Backward pass for loss
+        optimizer.step() # Optimizer step to update parameters
     train_loss /= len(train_dataloader)
 
-    # 设置变量用于累计损失和准确率
+    # ----- test ----- 
     test_loss, test_acc = 0, 0 
     model.eval()
     with torch.inference_mode():
         for X, y in test_dataloader:
-            # 1. 前向传播
-            test_pred = model(X)
-           
-            # 2. 计算损失（累计）
-            test_loss += loss_function(test_pred, y) # 累计每个epoch的损失
-
-            # 3. 计算准确率
-            test_acc += accuracy_fn(y_true=y, y_pred=test_pred.argmax(dim=1))
-        
-        # 测试损失除以测试数据加载器的长度（每个批次）
+            test_pred = model(X) # Forward pass
+            test_loss += loss_function(test_pred, y) # Compute loss and Accumulate loss over each epoch
+            test_acc += accuracy_fn(y_true=y, y_pred=test_pred.argmax(dim=1)) # Compute accuracy
         test_loss /= len(test_dataloader)
-
-        # 测试准确率除以测试数据加载器的长度（每个批次）
         test_acc /= len(test_dataloader)
 
-    ## 打印训练情况
+    ## Print training status
     print(f"\nTrain loss: {train_loss:.5f} | Test loss: {test_loss:.5f}, Test acc: {test_acc:.2f}%\n")
     train_losses.append(train_loss.detach().numpy())
     test_losses.append(test_loss.detach().numpy())
     test_accuracies.append(test_acc)
-     
+
+# timer
 train_time_end_on_cpu = timer()
 total_train_time_model = print_train_time(
     start=train_time_start_on_cpu, 
