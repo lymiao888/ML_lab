@@ -15,7 +15,7 @@ def main():
     BATCH_SIZE = 32
     EPOCHS = 5
 
-    # Load MNIST dataset
+    # Load dataset
     train_data = torchvision.datasets.MNIST(
         root='MNIST',
         train=True,
@@ -29,7 +29,7 @@ def main():
         download=True
     )
 
-    # Create data loaders
+    # build dataloader
     train_dataloader = DataLoader(
         train_data,
         batch_size=BATCH_SIZE,
@@ -95,7 +95,7 @@ def main():
 
     # Calculate and print total training time
     train_time_end_on_cpu = timer()
-    total_train_time_model = print_train_time(
+    print_train_time(
         start=train_time_start_on_cpu, 
         end=train_time_end_on_cpu,
         device=str(next(model.parameters()).device)
