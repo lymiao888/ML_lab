@@ -6,6 +6,7 @@
 
 ## 作业说明
 1. 目录结构
+```
 Task2
 ├── dataset
 │   └── house.csv
@@ -18,6 +19,7 @@ Task2
     ├── homework.py
     ├── model.py
     └── utils.py
+```
 可以在任意目录位置执行
 ```bash
 sh run_homework.sh
