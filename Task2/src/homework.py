@@ -1,7 +1,7 @@
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, TensorDataset
-
+import argparse
 from tqdm import tqdm
 import pandas as pd
 from timeit import default_timer as timer 
@@ -12,11 +12,18 @@ from sklearn.preprocessing import StandardScaler
 
 def main():
 
-    BATCH_SIZE = 64
-    EPOCHS = 80
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('data_dir', type=str, help='path to the data file')
+    parser.add_argument('--batch_size', type=int, default=64, help='batch size for processing (default: 64)')
+    parser.add_argument('--epochs', type=int, default=80, help='number of epochs for processing (default: 80)')
+    args = parser.parse_args()
+
+    batch_size = args.batch_size
+    epochs = args.epochs
+    data_dir = args.data_dir
 
     # Load data from CSV
-    df_house = pd.read_csv("./dataset/house.csv") 
+    df_house = pd.read_csv(data_dir) 
 
     # Build dataset
     data = df_house.drop("median_house_value", axis=1)
@@ -40,8 +47,8 @@ def main():
     train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 
     # build dataloader
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # init model
     model = RegressionModel(input_size = 8, hidden_size = 80)
@@ -51,7 +58,7 @@ def main():
 
     train_time_start_on_cpu = timer()
     
-    for epoch in tqdm(range(EPOCHS)):
+    for epoch in tqdm(range(epochs)):
         print(f"Epoch: {epoch}\n-------")
 
         # ----- train -----         
@@ -81,7 +88,7 @@ def main():
         mae /= len(test_loader.dataset)
         mse /= len(test_loader.dataset)
         ## Print training status
-        print(f"Epoch [{epoch+1}/{EPOCHS}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}, MAE: {mae:.2f}, MSE: {mse:.2f}")
+        print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}, MAE: {mae:.2f}, MSE: {mse:.2f}")
 
     train_time_end_on_cpu = timer()
     print_train_time(
