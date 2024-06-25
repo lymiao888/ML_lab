@@ -33,10 +33,12 @@ python -u "$script_dir/../src/homework.py" "$script_dir/../dataset/house.csv" \
 ```
 
 2. 数据集--加州房价
+
 UCL：https://raw.githubusercontent.com/huangjia2019/house/master/house.csv
 由于有时候会有网络连接问题，我直接下载在本地了
 
 3. 代码说明
+   
 本题根据所给example进行改写，example是对 MNIST 手写数字数据集通过BP全联接神经网络进行分类任务；
 根据作业要求，model.py文件中，我在fully_connected_model的基础上添加了RegressionModel作为回归模型；
 同时加入参数的传入，可以灵活变动batch_size,epochs和data_dir；
