@@ -15,23 +15,6 @@ class GaussianBlur(object):
         x = x.filter(ImageFilter.GaussianBlur(radius=sigma))
         return x
 
-transform_weak = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))
-])
-
-transform_strong = transforms.Compose([
-    transforms.RandomResizedCrop(32, scale=(0.2, 1.)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
-    transforms.RandomGrayscale(p=0.2),
-    transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))
-])
-
 def entropy_regularization_loss(logits):
     probs = F.softmax(logits, dim=1)
     entropy = -torch.sum(probs * torch.log(probs), dim=1)
@@ -68,26 +51,28 @@ def unlabeled_train(batch_u, model, device, temperature = 0.9, threshold = 0.9):
         loss = pseudo_loss.mean()
     return loss
 
-def unlabeled_train_FixMatch(batch_u, model, device, temperature=0.9, threshold=0.9):
-    # Apply weak augmentation to get pseudo-labels
-    batch_u_weak = transform_weak(batch_u)
-    outputs_weak = model(batch_u_weak.to(device))
-    probas_weak = torch.softmax(outputs_weak / temperature, dim=-1)
-    _, pseudo_labels = torch.max(probas_weak, dim=-1)
-
-    # Apply strong augmentation
-    batch_u_strong = transform_strong(batch_u)
-
-    # Compute loss for high-confidence samples
-    outputs_strong = model(batch_u_strong.to(device))
-    probas_strong = torch.softmax(outputs_strong / temperature, dim=-1)
-    confidences, _ = torch.max(probas_strong, dim=-1)
-    mask = (confidences > threshold) & (pseudo_labels != -1)
-
-    # Compute loss
-    loss_unlabeled = F.cross_entropy(outputs_strong[mask], pseudo_labels[mask])
-    loss = loss_unlabeled.mean()
-
+def FixMatch_unlabeled_train(batch_u_weak, batch_u_strong, model, device, temperature=0.9, threshold=0.95):
+    model.train()
+    images_weak = batch_u_weak.to(device)
+    images_strong = batch_u_strong.to(device)
+    loss = torch.tensor(0.0, device = device)
+    # Forward pass for weakly augmented images
+    with torch.no_grad():
+        outputs_weak = model(images_weak)
+        probas_weak = torch.softmax(outputs_weak / temperature, dim=-1)
+        max_probas_weak, pseudo_labels = torch.max(probas_weak, dim=-1)
+        high_confidence_mask = max_probas_weak.ge(threshold).float()
+    
+    if high_confidence_mask.sum() > 0:
+        # Forward pass for strongly augmented images
+        outputs_strong = model(images_strong)
+        
+        # Calculate pseudo loss only for high confidence samples
+        pseudo_loss = F.cross_entropy(outputs_strong, pseudo_labels, reduction='none')
+        pseudo_loss = (pseudo_loss * high_confidence_mask).mean()
+    else:
+        pseudo_loss = torch.tensor(0.0, device=device)
+        loss = pseudo_loss.mean()
     return loss
 
 def test(test_loader, model, device):

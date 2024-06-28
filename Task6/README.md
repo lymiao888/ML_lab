@@ -35,6 +35,8 @@ fruit_from_scratch.py : 随机初始化模型全部权重，从头训练所有�
 ```bash
 cd Task6
 wget https://zihao-openmmlab.obs.cn-east-3.myhuaweicloud.com/20220716-mmclassification/dataset/fruit30/fruit30_split.zip
+unzip fruit30_split.zip
+rm fruit30_split.zip
 mkdir checkpoint
 cd ./src
 python fruit_last_layer.py --data_dir "../fruit30_split" --batch_size 128 --epochs 60 --output_dir "../checkpoint/fruit30_pytorch_C1.pth"
